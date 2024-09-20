@@ -5,6 +5,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,18 +15,17 @@ import org.springframework.stereotype.Service;
 import com.rak.entity.EmpLeaveBalance;
 import com.rak.entity.EmpLeaves;
 import com.rak.entity.Employee;
+import com.rak.enums.LeaveStatus;
 import com.rak.enums.LeaveType;
 import com.rak.exception.EmailIdAlreadyExistException;
-import com.rak.exception.EmpIdNotExistException;
 import com.rak.exception.EmpNotFoundException;
 import com.rak.exception.InsufficientLeaveException;
 import com.rak.exception.StartDateAfterEndDateException;
 import com.rak.repository.EmpLeaveBalRepository;
 import com.rak.repository.EmployeeRepository;
 import com.rak.repository.LeaveRepository;
-import com.rak.requestdto.EmployeeRegRequest;
+import com.rak.requestdto.EmpRegRequest;
 import com.rak.requestdto.LeaveRequest;
-import com.rak.requestdto.UpdateProfileRequest;
 import com.rak.responsedto.EmployeeResponse;
 
 import jakarta.transaction.Transactional;
@@ -42,50 +43,50 @@ public class EmployeeServiceImpl implements EmployeeService
     @Autowired
     private EmpLeaveBalRepository empLeaveBalRepository;
     
+    private final static Logger logger=LoggerFactory.getLogger(EmployeeServiceImpl.class);
+    
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public EmployeeResponse updateEmployeeProfile(Long empId, UpdateProfileRequest updateProfileRequest) throws EmpNotFoundException, EmailIdAlreadyExistException 
+    public void registerEmployee(EmpRegRequest empRegRequest) throws EmpNotFoundException, EmailIdAlreadyExistException 
     {
-    	Optional<Employee> empOptional=employeeRepository.findById(empId);
+    	Optional<Employee> empOptional=employeeRepository.findById(empRegRequest.getEmpId());
     	if(empOptional.isEmpty())
-    		throw new EmpNotFoundException("Employee not found...!!!");
+    	{
+    		logger.error("empId: {} is incorrect first get empId from admin...!!!",empRegRequest.getEmpId());
+    		throw new EmpNotFoundException("first get empId from admin...!!!");
+    	}
     	
-    	Optional<Employee> emp2=employeeRepository.findByEmail(updateProfileRequest.getEmail());
+    	Optional<Employee> emp2=employeeRepository.findByEmail(empRegRequest.getEmail());
     	if(emp2.isPresent())
+    	{
+    		logger.error("email: {} already exists...!!!", empRegRequest.getEmail());
     		throw new EmailIdAlreadyExistException("email id already exist...!!!");
+    	}
     	
-    	// update object fields
     	Employee emp=empOptional.get();
-    	emp.setMiddleName(updateProfileRequest.getMiddleName());
-    	emp.setEmail(updateProfileRequest.getEmail());
-    	emp.setPassword(passwordEncoder.encode(updateProfileRequest.getPassword()));
-    	emp.setMobile(updateProfileRequest.getMobile());
+    	
+    	emp.setEmpId(empRegRequest.getEmpId());
+    	emp.setFirstName(empRegRequest.getFirstName());
+    	emp.setMiddleName(empRegRequest.getMiddleName());
+    	emp.setLastName(empRegRequest.getLastName());
+    	emp.setEmail(empRegRequest.getEmail());
+    	emp.setPassword(passwordEncoder.encode(empRegRequest.getPassword()));
+    	// emp.setPassword(empRegRequest.getPassword());
+    	emp.setMobile(empRegRequest.getMobile());
     	emp.setProfileCompleted(true);
     	
     	// save the changes
     	employeeRepository.save(emp);
     	
-    	// build return object
-    	EmployeeResponse empDto=EmployeeResponse
-								.builder()
-								.empId(emp.getEmpId())
-								.firstName(emp.getFirstName())
-								.middleName(emp.getMiddleName())
-								.lastName(emp.getLastName())
-								.email(emp.getEmail())
-								.mobile(emp.getMobile())
-								.build();
-		
-       return empDto;
     }
 
     @Override
     public void changePassword(Long empId, String newPassword) throws EmpNotFoundException 
     {
     	Employee emp=employeeRepository.findById(empId).orElseThrow( ()-> new EmpNotFoundException("emp not found...!!!") );
-    	emp.setPassword(newPassword);
+    	emp.setPassword(passwordEncoder.encode(newPassword));
     	employeeRepository.save(emp);
     }
 
@@ -100,9 +101,10 @@ public class EmployeeServiceImpl implements EmployeeService
     }
 
     @Override
-    public EmpLeaves getLeaveStatus(Long leaveId) 
+    public LeaveStatus getLeaveStatus(Long leaveId) 
     {
-    	return leaveRepository.findByLeaveId(leaveId).get();
+    	EmpLeaves empLeave=leaveRepository.findByLeaveId(leaveId).get();
+    	return empLeave.getLeaveStatus();
     }
     
     
@@ -154,63 +156,6 @@ public class EmployeeServiceImpl implements EmployeeService
 		
 		leaveRepository.save(leave);
 	}
-	
-	// -------------------------
-	
-	@Override
-	public EmployeeResponse registerEmployee(EmployeeRegRequest employeeRegRequest) throws EmailIdAlreadyExistException, EmpIdNotExistException 
-	{
-		// checks for validation
-		if(employeeRepository.existsByEmail(employeeRegRequest.getEmail())) 
-			throw new EmailIdAlreadyExistException(employeeRegRequest.getEmail()+" => already exists...!!!");
-		
-		// if(!employeeRepository.existByEmpId(employeeRegRequest.getEmpId()))
-			// throw new EmpIdNotExistException(employeeRegRequest.getEmpId()+" => this empId not given by Admin...!!!");
-		
-//		Optional<Employee> empOptional=employeeRepository.findById(employeeRegRequest.getEmpId());
-//    	if(empOptional.isEmpty())
-//    		throw new EmpIdNotExistException(employeeRegRequest.getEmpId()+" => this empId not given by Admin...!!!");
-		
-// 		Employee emp=empOptional.get();
-		
-		
-		
-		Employee emp=new Employee();
-    	// update employee object fields
-
-		emp.setMiddleName(employeeRegRequest.getMiddleName());
-		emp.setEmail(employeeRegRequest.getEmail());
-		emp.setPassword(passwordEncoder.encode(employeeRegRequest.getPassword()));
-		emp.setMobile(employeeRegRequest.getMobile());
-		emp.setProfileCompleted(true);
-		
-		// update in database
-		employeeRepository.save(emp);
-		
-		// build return response object
-    	EmployeeResponse empDto=EmployeeResponse
-								.builder()
-								.empId(emp.getEmpId())
-								.firstName(emp.getFirstName())
-								.middleName(emp.getMiddleName())
-								.lastName(emp.getLastName())
-								.email(emp.getEmail())
-								.mobile(emp.getMobile())
-								.build();
-		
-		return empDto;
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	// =============== Utility Method ==========================

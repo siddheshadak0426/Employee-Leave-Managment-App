@@ -44,6 +44,8 @@ public class Employee
     private String middleName;
     private String lastName;
     private String email; // userName;
+    
+    @JsonIgnore
     private Long mobile;
     private String password; 
    

@@ -1,8 +1,11 @@
 package com.rak.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,69 +16,62 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.rak.entity.LogninRequest;
 import com.rak.exception.EmailIdAlreadyExistException;
-import com.rak.exception.EmpIdNotExistException;
-import com.rak.requestdto.EmployeeRegRequest;
-import com.rak.responsedto.EmployeeResponse;
+import com.rak.exception.EmpNotFoundException;
+import com.rak.requestdto.EmpRegRequest;
+import com.rak.requestdto.LoginRequest;
 import com.rak.responsedto.JwtResponse;
 import com.rak.security.jwt.JwtUtils;
 import com.rak.security.user.SecurityUser;
 import com.rak.service.EmployeeService;
 
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
-// Step: 5
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/auth")
 public class AuthController 
 {
-	@Autowired
-	private EmployeeService employeeService;
+	// @Autowired
+    private final EmployeeService employeeService;
 	
-	@Autowired
-	private AuthenticationManager authenticationManager;
+	private final AuthenticationManager authenticationManager;
 	
-	@Autowired
-	private JwtUtils jwtUtils;
+	private final JwtUtils jwtUtils;
 	
-	@PostMapping("/signup") // http://localhost:8080/auth/signup
-	public ResponseEntity<EmployeeResponse> registerUser(@RequestBody EmployeeRegRequest employeeRegRequest)
-	{
-		try 
-		{
-			EmployeeResponse empDto=employeeService.registerEmployee(employeeRegRequest);
-			return ResponseEntity.ok(empDto);
-		} 
-		catch (EmailIdAlreadyExistException e) 
-		{
-			e.printStackTrace();
-		} 
-		catch (EmpIdNotExistException e) 
-		{
-			e.printStackTrace();
-		}
-		
-		return null;
-	}
+	private static final Logger logger=LoggerFactory.getLogger(AuthController.class);
 	
-	
-	@PostMapping("/login") // http://localhost:8080/auth/login
-	public ResponseEntity<JwtResponse> authenticateUser(@RequestBody @Valid LogninRequest request)
-	{
-		Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-		
-		SecurityContextHolder.getContext().setAuthentication(authentication);
-		
-		String jwt=jwtUtils.generateJwtTokenForUser(authentication);
-		SecurityUser user=(SecurityUser) authentication.getPrincipal();
-		
-		List<String> roleList=user.getAuthorities().stream().map(authority->authority.getAuthority()).toList();
-		
-		JwtResponse response=JwtResponse.builder().email(user.getUsername()).role(roleList.get(0)).token(jwt).build();
-		
-		return ResponseEntity.ok(response);
-	}
-	
-	
+    @PostMapping("/signup") // http://localhost:8080/auth/signup
+    public ResponseEntity<String> empRegistration(@RequestBody EmpRegRequest empRegRequest) throws EmpNotFoundException, EmailIdAlreadyExistException 
+    {
+    	employeeService.registerEmployee(empRegRequest);
+    	return new ResponseEntity<>("Registration done successfully...!!!", HttpStatus.OK);
+    }
+    
+    
+    @PostMapping("/login") // http://localhost:8080/auth/login
+    public ResponseEntity<JwtResponse> EmpLogin(@RequestBody LoginRequest loginRequest)
+    {
+    	Authentication authentication=authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+    	logger.info("authentication: {}", authentication);
+    	
+    	SecurityContextHolder.getContext().setAuthentication(authentication);
+    	String jwt=jwtUtils.generateJwtTokenForUser(authentication);
+    	
+    	SecurityUser user= (SecurityUser) authentication.getPrincipal();
+    	
+    	List<String> roleList=user.getAuthorities().stream().map(authority->authority.getAuthority()).collect(Collectors.toList());
+    	
+    	JwtResponse response=JwtResponse
+    							.builder()
+    							.empId(user.getEmpId())
+    							.email(user.getUsername())
+    							.token(jwt)
+    							.tokenType("Bearer")
+    							.roleList(roleList)
+    							.build();
+    	
+    	 return ResponseEntity.ok(response);
+    }
+    
 }

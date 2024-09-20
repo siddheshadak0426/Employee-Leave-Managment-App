@@ -11,9 +11,12 @@ import lombok.Setter;
 @Setter
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class UpdateProfileRequest
+public class EmpRegRequest
 {
+	private Long empId;
+	private String firstName;
     private String middleName;
+    private String lastName;
     private String email;
     private String password;
     private Long mobile;

@@ -38,7 +38,10 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter
 	{
 		try
 		{
+			logger.info("in oncePerRequestFilter class doFilterInternal() ...!!!");
 			String jwt=parseJwt(request);
+			logger.info("jwt: {} ", jwt);
+			
 			if(jwt!=null && jwtUtils.validateToken(jwt))
 			{
 				String email=jwtUtils.getUserNameFromToken(jwt);
@@ -54,6 +57,8 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter
 		{
 			logger.error("cannot set user Authentication : {} ", e.getMessage());
 		}
+		
+		filterChain.doFilter(request, response); // ***VIP***
 	}
 	
 	private String parseJwt(HttpServletRequest request)
@@ -61,7 +66,7 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter
 		String authorizationHeader=request.getHeader("Authorization");
 		if(StringUtils.hasText(authorizationHeader) && authorizationHeader.startsWith("Bearer "))
 		{
-			System.out.println("jwt token => "+authorizationHeader.substring(7));
+			logger.info("jwt token: {} ", authorizationHeader.substring(7));
 			return authorizationHeader.substring(7);
 		}
 		

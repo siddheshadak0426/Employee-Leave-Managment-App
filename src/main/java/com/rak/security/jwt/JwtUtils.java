@@ -45,7 +45,7 @@ public class JwtUtils
 				.subject(user.getUsername())
 				.claim("roleList", roleList)
 				.issuedAt(new Date())
-				.expiration( new Date( new Date().getTime()+jwtExpirationMs ) )
+				.expiration( new Date( (new Date()).getTime()+jwtExpirationMs ) )
 				.signWith(secrateKey())
 				.compact();
 		
@@ -77,6 +77,7 @@ public class JwtUtils
 				.verifyWith((SecretKey) secrateKey())
 				.build()
 				.parse(token);
+			
 			return true;
 		}
 		catch(MalformedJwtException e)

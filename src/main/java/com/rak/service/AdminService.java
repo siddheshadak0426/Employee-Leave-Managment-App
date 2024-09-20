@@ -10,7 +10,7 @@ import com.rak.responsedto.EmployeeResponse;
 
 public interface AdminService 
 {
-    Employee generateEmployee(String firstName, String lastName);
+    Long generateEmployee();
     void approveLeave(Long leaveId) throws IncorectLeaveIdException, StartDateAfterEndDateException, InsufficientLeaveException;
     void rejectLeave(Long leaveId) throws IncorectLeaveIdException;
     List<EmployeeResponse> getAllEmployees();

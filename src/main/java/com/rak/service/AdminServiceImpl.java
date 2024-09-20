@@ -8,7 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.rak.entity.EmpLeaveBalance;
@@ -45,19 +44,17 @@ public class AdminServiceImpl implements AdminService
     
     private static final Logger logger=LoggerFactory.getLogger(AdminServiceImpl.class);
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    //@Autowired
+    //private PasswordEncoder passwordEncoder;
+    
 
     @Override
-    public Employee generateEmployee(String firstName, String lastName)
+    public Long generateEmployee()
     {
     	// create employee object
     	Employee emp=Employee
     					.builder()
     					.empId(generateEmpId())
-    					.firstName(firstName)
-    					.lastName(lastName)
-    					.password(passwordEncoder.encode(generateTempPassword()))
     					.role(Role.ROLE_EMP)
     					.isProfileCompleted(false)
     					.leaveList(new ArrayList<>())
@@ -70,7 +67,7 @@ public class AdminServiceImpl implements AdminService
         empLeaveBalRepository.save(empLeaveBalance);
         
         logger.debug("new employee is created with employee details ==>> {} ", emp);
-    	return emp;
+    	return emp.getEmpId();
     }
     
     @Override
@@ -83,9 +80,12 @@ public class AdminServiceImpl implements AdminService
     												.builder()
     												.empId(emp.getEmpId())
     												.firstName(emp.getFirstName())
+    												.middleName(emp.getMiddleName())
     												.lastName(emp.getLastName())
     												.email(emp.getEmail())
     												.mobile(emp.getMobile())
+    												.role(emp.getRole())
+    												.isProfileCompleted(emp.isProfileCompleted())
     												.build()
     										)
     										.toList();

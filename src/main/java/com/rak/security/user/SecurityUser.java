@@ -24,6 +24,7 @@ public class SecurityUser implements UserDetails
 {
 	private Employee employee;
 	
+	
 	public SecurityUser(Employee employee) 
 	{
 		this.employee=employee;
@@ -54,5 +55,12 @@ public class SecurityUser implements UserDetails
 	{
 		return employee.getEmail(); // here email is userName
 	}
+	
+	public Long getEmpId()
+	{
+		return employee.getEmpId();
+	}
+	
+	
 
 }

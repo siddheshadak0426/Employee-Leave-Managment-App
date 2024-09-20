@@ -1,5 +1,7 @@
 package com.rak.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,20 +33,29 @@ public class WebSecurityConfig
 	@Autowired
 	private SecurityUserDetailsService securityUserDetailsService;
 	
-	@Autowired
-	private JwtOncePerRequestFilter jwtOncePerRequestFilter;
+	private static final Logger logger=LoggerFactory.getLogger(WebSecurityConfig.class);
+	
+	//@Autowired
+	//private JwtOncePerRequestFilter jwtOncePerRequestFilter;
+	
+	@Bean
+	public JwtOncePerRequestFilter getJwtOncePerRequestFilter()
+	{
+		return new JwtOncePerRequestFilter();
+	}
+	
 	
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception
 	{
+		logger.info("in securityFilterChain()...!!!");
 		return	http
 					.csrf(csrf->csrf.disable())
 					.exceptionHandling(exception->exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 					.sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-					.authorizeHttpRequests(auth->auth.requestMatchers("/auth/**").permitAll())
-					.authorizeHttpRequests(auth->auth.requestMatchers("/employee/**", "/admin/**").authenticated())
+					.authorizeHttpRequests(auth->auth.requestMatchers("/auth/**" /*"/admin/generate-employee"*/).permitAll().requestMatchers("/employees/**", "/admin/**").authenticated())
 					.authenticationProvider(authenticationProvider())
-					.addFilterBefore(jwtOncePerRequestFilter, UsernamePasswordAuthenticationFilter.class)
+					.addFilterBefore(getJwtOncePerRequestFilter(), UsernamePasswordAuthenticationFilter.class)
 //					.cors(cors->cors.configurationSource(new CorsConfigurationSource() 
 //						{
 //							@Override
@@ -70,6 +81,7 @@ public class WebSecurityConfig
 	@Bean
 	public DaoAuthenticationProvider authenticationProvider()
 	{
+		logger.info(" in DaoAuthenticationProvider()...!!!");
 		DaoAuthenticationProvider authProvider=new DaoAuthenticationProvider();
 		authProvider.setUserDetailsService(securityUserDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder());
@@ -86,6 +98,7 @@ public class WebSecurityConfig
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception
 	{
+		logger.info("in AuthenticationManage()...!!!");
 		return authConfig.getAuthenticationManager();
 	}
 	

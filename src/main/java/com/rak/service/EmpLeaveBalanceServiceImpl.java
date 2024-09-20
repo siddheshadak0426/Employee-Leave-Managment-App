@@ -12,6 +12,7 @@ import com.rak.enums.LeaveType;
 import com.rak.exception.EmpNotFoundException;
 import com.rak.repository.EmpLeaveBalRepository;
 import com.rak.repository.EmployeeRepository;
+import com.rak.responsedto.LeavebalResponse;
 
 import jakarta.transaction.Transactional;
 
@@ -26,13 +27,21 @@ public class EmpLeaveBalanceServiceImpl implements EmpLeaveBalanceService
 	private EmpLeaveBalRepository empLeaveBalRepository;
 	
 	@Override
-	public EmpLeaveBalance getEmpLeaveBalance(Long empId) throws EmpNotFoundException 
+	public LeavebalResponse getEmpLeaveBalance(Long empId) throws EmpNotFoundException 
 	{
 		Employee emp=employeeRepository.findById(empId).orElseThrow( ()-> new EmpNotFoundException("employee not found with given empId...!!!") );
 		
-		EmpLeaveBalance empLeaveBalance= empLeaveBalRepository.findByEmployeeEmpId(empId).get();
+		EmpLeaveBalance leaveBal= empLeaveBalRepository.findByEmployeeEmpId(empId).get();
 		
-		return empLeaveBalance;
+		LeavebalResponse response=LeavebalResponse
+											.builder()
+											.sickLeaveBal(leaveBal.getSickLeaveBal())
+											.casualLeaveBal(leaveBal.getCasualLeaveBal())
+											.otherLeaveBal(leaveBal.getOtherLeaveBal())
+											.totalLeaveBal(leaveBal.getTotalLeaveBal())
+											.build();
+		
+		return response;
 	}
 	
 	// Reset total leaves for all employees on January 1st every year

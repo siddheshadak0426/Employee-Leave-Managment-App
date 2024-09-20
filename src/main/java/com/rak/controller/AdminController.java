@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.rak.entity.Employee;
 import com.rak.exception.IncorectLeaveIdException;
 import com.rak.exception.InsufficientLeaveException;
 import com.rak.exception.StartDateAfterEndDateException;
@@ -28,12 +27,11 @@ public class AdminController
     
     // Tested
     @PostMapping("/generate-employee") // http://localhost:8080/admin/generate-employee
-    @PreAuthorize("hasRole('ADMIN')") //  @PreAuthorize("hasRole('ADMIN') or hasRole('EMP')")
-    public ResponseEntity<Employee> generateEmployee(@RequestParam String firstName, @RequestParam String lastName) 
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> generateEmployeeId() 
     {
-       Employee empResponse=adminService.generateEmployee(firstName, lastName);
-       System.out.println("generate empId...");
-       return new ResponseEntity<>(empResponse, HttpStatus.CREATED);
+       Long empId=adminService.generateEmployee();
+       return new ResponseEntity<>("new employee id: "+empId, HttpStatus.CREATED);
     }
     
     // Tested
@@ -48,19 +46,19 @@ public class AdminController
     // Tested
     @PostMapping("/approve-leave") // http://localhost:8080/admin/approve-leave?leaveId=1
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> approveEmpLeave(@RequestParam Long leaveId) throws IncorectLeaveIdException, StartDateAfterEndDateException, InsufficientLeaveException  
+    public ResponseEntity<String> approveEmpLeave(@RequestParam Long leaveId) throws IncorectLeaveIdException, StartDateAfterEndDateException, InsufficientLeaveException  
     {
        	adminService.approveLeave(leaveId);
-       	return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+       	return ResponseEntity.status(HttpStatus.OK).body("leave request approved...!!!");
     }
     
     // 
     @PostMapping("/reject-leave") // http://localhost:8080/admin/reject-leave?leaveId=2
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> rejectEmpLeave(@RequestParam Long leaveId) throws IncorectLeaveIdException 
+    public ResponseEntity<String> rejectEmpLeave(@RequestParam Long leaveId) throws IncorectLeaveIdException 
     {
         adminService.rejectLeave(leaveId);
-       	return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+       	return ResponseEntity.status(HttpStatus.OK).body("leave request rejected...!!!");
     }
   
 }

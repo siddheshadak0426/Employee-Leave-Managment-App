@@ -37,5 +37,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint
 		mapper.writeValue(response.getOutputStream(), body);
 		
 	}
+	
 
 }

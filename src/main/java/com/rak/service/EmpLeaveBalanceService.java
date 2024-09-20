@@ -1,9 +1,9 @@
 package com.rak.service;
 
-import com.rak.entity.EmpLeaveBalance;
 import com.rak.exception.EmpNotFoundException;
+import com.rak.responsedto.LeavebalResponse;
 
 public interface EmpLeaveBalanceService 
 {
-	EmpLeaveBalance getEmpLeaveBalance(Long empId) throws EmpNotFoundException;
+	LeavebalResponse getEmpLeaveBalance(Long empId) throws EmpNotFoundException;
 }
